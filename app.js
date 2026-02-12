@@ -1,12 +1,14 @@
 const express = require("express");
-const authRoutes = require('./src/routes/authRoutes'); // <--- Import your new Route
+const authRoutes = require('./src/routes/authRoutes');
+const leadRoutes = require('./src/routes/leadRoutes'); // <--- New Import
 
 const app = express();
 
 app.use(express.json());
 
-// Mount the Auth Routes
-app.use('/api/auth', authRoutes); // <--- Activate the Road
+// Mount the Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/leads', leadRoutes); // <--- New Route Activated
 
 app.get("/", (req, res) => {
   res.send("CRM Backend Running");
