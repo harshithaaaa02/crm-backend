@@ -16,6 +16,12 @@ app.use(express.json());
 
 // Routes
 app.use("/api/dashboard", require("./src/routes/dashboardRoutes"));
+app.use("/api/notifications", require("./src/routes/notificationRoutes"));
+app.use("/api/leads", require("./src/routes/leadRoutes"));
+
+
+require("./src/utils/cronJobs");
+
 
 app.get("/", (req, res) => {
   res.send("CRM Backend Running...");

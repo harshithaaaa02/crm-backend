@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { createLead, getLeads, updateLead, deleteLead } = require('../controllers/leadController');
+// Import the functions using the Team's names
+const { createLead, getAllLeads, updateLead } = require('../controllers/leadController');
 
 router.post('/', createLead);       // Create
-router.get('/', getLeads);          // Read All
+router.get('/', getAllLeads);       // Get All (Team named it getAllLeads)
 router.put('/:id', updateLead);     // Update
-router.delete('/:id', deleteLead);  // Delete
 
 module.exports = router;
