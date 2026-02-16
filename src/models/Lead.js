@@ -18,13 +18,25 @@ const leadSchema = new mongoose.Schema(
       default: 0,
     },
     isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+    reminderSent: {
   type: Boolean,
-  default: false,
+  default: false
 },
+leadScore: {
+  type: Number,
+  default: 40
+}
 
+    
   },
   { timestamps: true }
-  
 );
 
 module.exports = mongoose.model("Lead", leadSchema);
