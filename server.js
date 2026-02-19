@@ -9,28 +9,31 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./src/config/swagger");
 
 
-
 dotenv.config();
 
 console.log("SERVER RUNNING FROM:", __filename);
 console.log("ENV CHECK:", process.env.MONGO_URI);
 
 const app = express();
-// 🔐 Security Middleware
-app.use(helmet());
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100
 });
-
+app.use(helmet());
 app.use(limiter);
 
-// Middleware
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
+app.options("*", cors());
+
 app.use(express.json());
-app.use(helmet());
-app.use(errorHandler);
+
 
 // Routes
 app.use("/api/dashboard", require("./src/routes/dashboardRoutes"));
@@ -39,16 +42,16 @@ app.use("/api/leads", require("./src/routes/leadRoutes"));
 app.use("/api/clients", require("./src/routes/clientRoutes"));
 app.use("/api/audit-logs", require("./src/routes/auditRoutes"));
 app.use("/api/auth", require("./src/routes/authRoutes"));
+ 
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 require("./src/utils/cronJobs");
-
 
 app.get("/", (req, res) => {
   res.send("CRM Backend Running...");
 });
 
-
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
