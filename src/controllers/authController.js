@@ -3,16 +3,20 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 // REGISTER
+// REGISTER BLOCK in src/controllers/authController.js
+// REGISTER BLOCK in src/controllers/authController.js
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    // 1. Destructure 'role' from the request body
+    const { name, email, password, role } = req.body; 
 
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const user = await User.create({ name, email, password });
+    // 2. Pass 'role' to the User.create method
+    const user = await User.create({ name, email, password, role }); 
 
     res.status(201).json({ message: "User registered successfully" });
 
@@ -20,7 +24,6 @@ const register = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 // LOGIN
 const login = async (req, res) => {
   try {
