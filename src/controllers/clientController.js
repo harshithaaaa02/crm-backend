@@ -48,3 +48,84 @@ exports.deleteClient = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+exports.calculateRelationshipScore = async (req, res) => {
+  try {
+    const clients = await Client.find({ isDeleted: false });
+
+    for (const client of clients) {
+      let score = 50;
+
+      // Revenue factor
+      if (client.revenue > 20000) {
+        score += 30;
+      } else if (client.revenue > 10000) {
+        score += 20;
+      } else {
+        score += 10;
+      }
+
+      // Recent activity factor
+      const daysSinceUpdate =
+        (Date.now() - new Date(client.updatedAt)) / (1000 * 60 * 60 * 24);
+
+      if (daysSinceUpdate < 7) {
+        score += 20;
+      } else if (daysSinceUpdate < 30) {
+        score += 10;
+      } else {
+        score -= 10;
+      }
+
+      client.relationshipScore = score;
+      await client.save();
+
+    }
+
+    res.json({ message: "Relationship scores updated successfully" });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getEngagementAnalysis = async (req, res) => {
+  try {
+    const clients = await Client.find({ isDeleted: false });
+
+    const hot = [];
+    const warm = [];
+    const cold = [];
+    const atRisk = [];
+
+    for (const client of clients) {
+
+      if (client.relationshipScore >= 80) {
+        hot.push(client);
+      } else if (client.relationshipScore >= 60) {
+        warm.push(client);
+      } else {
+        cold.push(client);
+      }
+
+      const daysSinceUpdate =
+        (Date.now() - new Date(client.updatedAt)) / (1000 * 60 * 60 * 24);
+
+      if (daysSinceUpdate > 30) {
+        atRisk.push(client);
+      }
+    }
+
+    res.json({
+      totalClients: clients.length,
+      hot: hot.length,
+      warm: warm.length,
+      cold: cold.length,
+      atRisk: atRisk.length
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

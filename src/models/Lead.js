@@ -31,12 +31,18 @@ const leadSchema = new mongoose.Schema(
 },
 leadScore: {
   type: Number,
-  default: 40
+  default: 40,
+  nextFollowUpDate: Date,
 }
-
-    
   },
   { timestamps: true }
 );
+
+leadSchema.index({ email: 1 });
+leadSchema.index({ status: 1 });
+leadSchema.index({ assignedTo: 1 });
+leadSchema.index({ assignedTo: 1 });
+leadSchema.index({ createdAt: -1 });
+
 
 module.exports = mongoose.model("Lead", leadSchema);

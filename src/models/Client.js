@@ -22,11 +22,20 @@ const clientSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    relationshipScore: {
+  type: Number,
+  default: 50
+},
+
   },
   { timestamps: true }
 );
 
 // Index for performance
 clientSchema.index({ email: 1 });
+
+clientSchema.index({ revenue: 1 });
+clientSchema.index({ relationshipScore: 1 });
+clientSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("Client", clientSchema);
