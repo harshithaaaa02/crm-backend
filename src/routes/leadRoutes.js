@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require("express-validator");
-const { authorizeRoles } = require("../middlewares/roleMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
+const { authorize } = require("../middlewares/roleMiddleware");
 
 // Import controller functions properly
 const leadController = require('../controllers/leadController');
@@ -27,6 +27,7 @@ router.get('/', getAllLeads);
 router.put('/:id', updateLead);
 
 // 🔹 DELETE LEAD (Only Admin)
-router.delete('/:id', authorizeRoles("admin"), leadController.deleteLead);
+router.delete('/:id', protect, authorize("admin"), leadController.deleteLead);
+
 
 module.exports = router;

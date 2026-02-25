@@ -2,13 +2,13 @@ const express = require("express");
 const router = express.Router();
 
 const { protect } = require("../middlewares/authMiddleware");
-const { authorizeRoles } = require("../middlewares/roleMiddleware");
+const { authorize} = require("../middlewares/roleMiddleware");
 const AuditLog = require("../models/AuditLog");
 
 router.get(
   "/",
   protect,
-  authorizeRoles("admin"),
+  authorize("admin"),
   async (req, res) => {
     try {
       const logs = await AuditLog.find().sort({ createdAt: -1 });
