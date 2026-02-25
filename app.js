@@ -4,6 +4,7 @@ const leadRoutes = require('./src/routes/leadRoutes');
 const clientRoutes = require('./src/routes/clientRoutes');
 const interactionRoutes = require('./src/routes/interactionRoutes');
 const dealRoutes = require('./src/routes/dealRoutes'); // <--- New Import
+const taskRoutes = require('./routes/taskRoutes');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use('/api/leads', leadRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/interactions', interactionRoutes);
 app.use('/api/deals', dealRoutes); // <--- New Route Activated
+app.use('/api/tasks', taskRoutes);
 
 app.get("/", (req, res) => {
   res.send("CRM Backend Running");
