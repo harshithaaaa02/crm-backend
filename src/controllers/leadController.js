@@ -4,7 +4,10 @@ const Task = require("../models/Task");
 const AuditLog = require("../models/AuditLog");
 const calculateLeadScore = require("../utils/leadScoring");
 
-// 🔹 Get All Leads
+/**
+ * 🔹 Get All Leads
+ * Fetches leads that are not marked as deleted.
+ */
 const getAllLeads = async (req, res) => {
   try {
     const leads = await Lead.find({ isDeleted: false });
@@ -14,7 +17,10 @@ const getAllLeads = async (req, res) => {
   }
 };
 
-// 🔹 Create Lead
+/**
+ * 🔹 Create Lead
+ * Initializes a new lead and records its first milestone in history.
+ */
 const createLead = async (req, res) => {
   try {
     const { name, email, phone, status, assignedTo, value } = req.body;
@@ -25,7 +31,12 @@ const createLead = async (req, res) => {
       phone,
       status: status || "New",
       assignedTo,
-      value: value || 0
+      value: value || 0,
+      history: [{
+        type: status || "New",
+        date: new Date(),
+        desc: "Lead created in system."
+      }]
     });
 
     res.status(201).json(lead);
@@ -34,7 +45,10 @@ const createLead = async (req, res) => {
   }
 };
 
-// 🔹 Update Lead
+/**
+ * 🔹 Update Lead
+ * FIXED: Ensures history is recorded whenever status changes.
+ */
 const updateLead = async (req, res) => {
   try {
     const { id } = req.params;
@@ -43,30 +57,44 @@ const updateLead = async (req, res) => {
     const lead = await Lead.findById(id);
     if (!lead) return res.status(404).json({ message: "Lead not found" });
 
-    if (status !== undefined) lead.status = status;
+    // 🔹 Record History (Past & Present Lifecycle)
+    // Only triggers if the status is actually different
+    if (status !== undefined && status !== lead.status) {
+      lead.history.push({
+        type: status,
+        date: new Date(),
+        desc: `Lead moved to ${status} stage.`
+      });
+      lead.status = status;
+    }
+
     if (assignedTo !== undefined) lead.assignedTo = assignedTo;
     if (value !== undefined) lead.value = value;
     if (name !== undefined) lead.name = name;
 
+    // Update lead score based on value changes
     if (lead.value) {
       lead.leadScore = calculateLeadScore(lead.value);
     }
 
-    await lead.save();
+    // Await is now valid because the function is correctly marked 'async'
+    await lead.save(); 
     res.json(lead);
   } catch (error) {
     res.status(500).json({ message: "Update failed", error: error.message });
   }
 };
 
-// 🔹 Soft Delete Lead
+/**
+ * 🔹 Soft Delete Lead
+ */
 const deleteLead = async (req, res) => {
   try {
     const lead = await Lead.findById(req.params.id);
     if (!lead) return res.status(404).json({ message: "Lead not found" });
 
     lead.isDeleted = true;
-    await lead.save();
+    await lead.save(); // Save the soft delete status
     res.json({ message: "Lead deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
