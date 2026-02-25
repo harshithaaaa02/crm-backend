@@ -1,33 +1,39 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require("express-validator");
+
 const { protect } = require("../middlewares/authMiddleware");
 const { authorize } = require("../middlewares/roleMiddleware");
 
-// Import controller functions properly
-const leadController = require('../controllers/leadController');
-const { createLead, getAllLeads, updateLead,   deleteLead
- } = leadController;
+const {
+  createLead,
+  getAllLeads,
+  updateLead,
+  deleteLead
+} = require('../controllers/leadController');
 
 
-// 🔹 CREATE LEAD (with validation)
+// CREATE LEAD
 router.post(
   '/',
+  protect,   // ⭐ REQUIRED
   [
-    body("name").notEmpty().withMessage("Name is required"),
+    body("name").notEmpty().withMessage("Name required"),
     body("email").isEmail().withMessage("Valid email required")
   ],
   createLead
 );
 
-// 🔹 GET ALL LEADS
-router.get('/', getAllLeads);
+// GET LEADS
+router.get('/', protect, getAllLeads);
 
-// 🔹 UPDATE LEAD
-router.put('/:id', updateLead);
 
-// 🔹 DELETE LEAD (Only Admin)
-router.delete('/:id', protect, authorize("admin"), leadController.deleteLead);
+// UPDATE
+router.put('/:id', protect, updateLead);
+
+
+// DELETE (ADMIN ONLY)
+router.delete('/:id', protect, authorize("admin"), deleteLead);
 
 
 module.exports = router;

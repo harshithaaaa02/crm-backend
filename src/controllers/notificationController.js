@@ -19,19 +19,32 @@ const createNotification = async (req, res) => {
 };
 
 // Get Notifications for a User
+// Get ONLY unread notifications
 const getUserNotifications = async (req, res) => {
+
   try {
+
     const { userId } = req.params;
 
-    const notifications = await Notification.find({ userId })
+    const notifications =
+      await Notification.find({
+        userId,
+        isRead: false   // ✅ IMPORTANT FIX
+      })
       .sort({ createdAt: -1 });
 
     res.json(notifications);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
+  }
+  catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+
+};
 // Mark Notification as Read
 const markAsRead = async (req, res) => {
   try {
@@ -48,9 +61,35 @@ const markAsRead = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// Mark all notifications as read for a user
+const markAllAsRead = async (req, res) => {
+
+  try {
+
+    const { userId } = req.params;
+
+    await Notification.updateMany(
+      { userId },
+      { isRead: true }
+    );
+
+    res.json({
+      message: "All notifications cleared"
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+
+};
 
 module.exports = {
   createNotification,
   getUserNotifications,
-  markAsRead
+  markAsRead,
+  markAllAsRead
 };
