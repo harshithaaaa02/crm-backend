@@ -4,8 +4,15 @@ const Task = require("../models/Task");
 const AuditLog = require("../models/AuditLog");
 const calculateLeadScore = require("../utils/leadScoring");
 
+<<<<<<< HEAD
 
 // ✅ GET ALL LEADS
+=======
+/**
+ * 🔹 Get All Leads
+ * Fetches leads that are not marked as deleted.
+ */
+>>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
 const getAllLeads = async (req, res) => {
 
   try {
@@ -24,9 +31,16 @@ const getAllLeads = async (req, res) => {
 
 };
 
+<<<<<<< HEAD
 
 
 // ✅ CREATE LEAD
+=======
+/**
+ * 🔹 Create Lead
+ * Initializes a new lead and records its first milestone in history.
+ */
+>>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
 const createLead = async (req, res) => {
 
   try {
@@ -40,16 +54,37 @@ const createLead = async (req, res) => {
       phone,
       status: status || "New",
       assignedTo,
+<<<<<<< HEAD
       value: value || 0
 
+=======
+      value: value || 0,
+      history: [{
+        type: status || "New",
+        date: new Date(),
+        desc: "Lead created in system."
+      }]
+>>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
     });
 
 
+<<<<<<< HEAD
     // notification
     if (req.user) {
+=======
+/**
+ * 🔹 Update Lead
+ * FIXED: Ensures history is recorded whenever status changes.
+ */
+const updateLead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, assignedTo, value, name } = req.body;
+>>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
 
       await Notification.create({
 
+<<<<<<< HEAD
         userId: req.user.id,
         title: "New Lead Created",
         message: `${lead.name} was added`,
@@ -61,6 +96,33 @@ const createLead = async (req, res) => {
 
     res.status(201).json(lead);
 
+=======
+    // 🔹 Record History (Past & Present Lifecycle)
+    // Only triggers if the status is actually different
+    if (status !== undefined && status !== lead.status) {
+      lead.history.push({
+        type: status,
+        date: new Date(),
+        desc: `Lead moved to ${status} stage.`
+      });
+      lead.status = status;
+    }
+
+    if (assignedTo !== undefined) lead.assignedTo = assignedTo;
+    if (value !== undefined) lead.value = value;
+    if (name !== undefined) lead.name = name;
+
+    // Update lead score based on value changes
+    if (lead.value) {
+      lead.leadScore = calculateLeadScore(lead.value);
+    }
+
+    // Await is now valid because the function is correctly marked 'async'
+    await lead.save(); 
+    res.json(lead);
+  } catch (error) {
+    res.status(500).json({ message: "Update failed", error: error.message });
+>>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
   }
 
   catch (error) {
@@ -76,12 +138,19 @@ const createLead = async (req, res) => {
 
 };
 
+<<<<<<< HEAD
 
 
 
 // ✅ UPDATE LEAD
 const updateLead = async (req, res) => {
 
+=======
+/**
+ * 🔹 Soft Delete Lead
+ */
+const deleteLead = async (req, res) => {
+>>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
   try {
 
     const { id } = req.params;
@@ -147,6 +216,7 @@ const deleteLead = async (req, res) => {
 
 
     lead.isDeleted = true;
+<<<<<<< HEAD
 
     await lead.save();
 
@@ -175,6 +245,12 @@ global.io
 
     });
 
+=======
+    await lead.save(); // Save the soft delete status
+    res.json({ message: "Lead deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+>>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
   }
 
   catch (error) {

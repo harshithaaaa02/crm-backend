@@ -14,7 +14,8 @@ const leadSchema = new mongoose.Schema({
     date: { type: Date, default: Date.now },
     desc: { type: String }
   }],
-  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  isDeleted: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Lead', leadSchema);
