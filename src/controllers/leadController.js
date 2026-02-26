@@ -69,14 +69,14 @@ const createLead = async (req, res) => {
 const updateLead = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, assignedTo, value, name } = req.body;
+    const { status, assignedTo, value, name, email } = req.body;
 
     const lead = await Lead.findById(id);
 
     if (!lead)
       return res.status(404).json({ message: "Lead not found" });
 
-    // Status history
+    // Status history logic
     if (status && status !== lead.status) {
       lead.history.push({
         type: status,
@@ -86,13 +86,17 @@ const updateLead = async (req, res) => {
       lead.status = status;
     }
 
+    // Update fields if they are provided in the request
     if (assignedTo !== undefined) lead.assignedTo = assignedTo;
+    
     if (value !== undefined) {
       lead.value = value;
       lead.leadScore = calculateLeadScore(value);
     }
 
     if (name !== undefined) lead.name = name;
+    
+    if (email !== undefined) lead.email = email; 
 
     await lead.save();
 
@@ -101,7 +105,7 @@ const updateLead = async (req, res) => {
       const notification = await Notification.create({
         userId: req.user.id,
         title: "Lead Updated",
-        message: `${lead.name} was updated`,
+        message: `${lead.name} was updated to ${lead.status}`,
         type: "lead"
       });
 
