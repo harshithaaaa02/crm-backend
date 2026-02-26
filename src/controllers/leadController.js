@@ -4,275 +4,168 @@ const Task = require("../models/Task");
 const AuditLog = require("../models/AuditLog");
 const calculateLeadScore = require("../utils/leadScoring");
 
-<<<<<<< HEAD
 
 // ✅ GET ALL LEADS
-=======
-/**
- * 🔹 Get All Leads
- * Fetches leads that are not marked as deleted.
- */
->>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
 const getAllLeads = async (req, res) => {
-
   try {
-
     const leads = await Lead.find({ isDeleted: false });
-
     res.json(leads);
-
   } catch (error) {
-
-    res.status(500).json({
-      message: error.message
-    });
-
+    res.status(500).json({ message: error.message });
   }
-
 };
-
-<<<<<<< HEAD
 
 
 // ✅ CREATE LEAD
-=======
-/**
- * 🔹 Create Lead
- * Initializes a new lead and records its first milestone in history.
- */
->>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
 const createLead = async (req, res) => {
-
   try {
-
     const { name, email, phone, status, assignedTo, value } = req.body;
 
     const lead = await Lead.create({
-
       name,
       email,
       phone,
       status: status || "New",
       assignedTo,
-<<<<<<< HEAD
-      value: value || 0
-
-=======
       value: value || 0,
-      history: [{
-        type: status || "New",
-        date: new Date(),
-        desc: "Lead created in system."
-      }]
->>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
+      leadScore: calculateLeadScore(value || 0),
+      history: [
+        {
+          type: status || "New",
+          date: new Date(),
+          desc: "Lead created in system."
+        }
+      ]
     });
 
-
-<<<<<<< HEAD
-    // notification
+    // Notification
     if (req.user) {
-=======
-/**
- * 🔹 Update Lead
- * FIXED: Ensures history is recorded whenever status changes.
- */
-const updateLead = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status, assignedTo, value, name } = req.body;
->>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
-
-      await Notification.create({
-
-<<<<<<< HEAD
+      const notification = await Notification.create({
         userId: req.user.id,
-        title: "New Lead Created",
-        message: `${lead.name} was added`,
+        title: "Lead Created",
+        message: `${lead.name} was created`,
         type: "lead"
-
       });
 
+      if (global.io) {
+        global.io
+          .to(req.user.id.toString())
+          .emit("notification", notification);
+      }
     }
 
     res.status(201).json(lead);
 
-=======
-    // 🔹 Record History (Past & Present Lifecycle)
-    // Only triggers if the status is actually different
-    if (status !== undefined && status !== lead.status) {
-      lead.history.push({
-        type: status,
-        date: new Date(),
-        desc: `Lead moved to ${status} stage.`
-      });
-      lead.status = status;
-    }
-
-    if (assignedTo !== undefined) lead.assignedTo = assignedTo;
-    if (value !== undefined) lead.value = value;
-    if (name !== undefined) lead.name = name;
-
-    // Update lead score based on value changes
-    if (lead.value) {
-      lead.leadScore = calculateLeadScore(lead.value);
-    }
-
-    // Await is now valid because the function is correctly marked 'async'
-    await lead.save(); 
-    res.json(lead);
   } catch (error) {
-    res.status(500).json({ message: "Update failed", error: error.message });
->>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
-  }
-
-  catch (error) {
-
     res.status(500).json({
-
       message: "Lead creation failed",
       error: error.message
-
     });
-
   }
-
 };
-
-<<<<<<< HEAD
-
 
 
 // ✅ UPDATE LEAD
 const updateLead = async (req, res) => {
-
-=======
-/**
- * 🔹 Soft Delete Lead
- */
-const deleteLead = async (req, res) => {
->>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
   try {
-
     const { id } = req.params;
+    const { status, assignedTo, value, name } = req.body;
 
     const lead = await Lead.findById(id);
 
     if (!lead)
       return res.status(404).json({ message: "Lead not found" });
 
+    // Status history
+    if (status && status !== lead.status) {
+      lead.history.push({
+        type: status,
+        date: new Date(),
+        desc: `Lead moved to ${status}`
+      });
+      lead.status = status;
+    }
 
-    Object.assign(lead, req.body);
+    if (assignedTo !== undefined) lead.assignedTo = assignedTo;
+    if (value !== undefined) {
+      lead.value = value;
+      lead.leadScore = calculateLeadScore(value);
+    }
 
-
-    if (lead.value)
-      lead.leadScore = calculateLeadScore(lead.value);
-
+    if (name !== undefined) lead.name = name;
 
     await lead.save();
 
-
+    // Notification
     if (req.user) {
-
-      await Notification.create({
-
+      const notification = await Notification.create({
         userId: req.user.id,
         title: "Lead Updated",
         message: `${lead.name} was updated`,
         type: "lead"
-
       });
 
+      if (global.io) {
+        global.io
+          .to(req.user.id.toString())
+          .emit("notification", notification);
+      }
     }
-
 
     res.json(lead);
 
-  }
-
-  catch (error) {
-
+  } catch (error) {
     res.status(500).json({
-
-      message: error.message
-
+      message: "Update failed",
+      error: error.message
     });
-
   }
-
 };
 
 
-
-
-// ✅ DELETE LEAD
+// ✅ DELETE LEAD (Soft delete)
 const deleteLead = async (req, res) => {
-
   try {
-
     const lead = await Lead.findById(req.params.id);
 
     if (!lead)
       return res.status(404).json({ message: "Lead not found" });
 
-
     lead.isDeleted = true;
-<<<<<<< HEAD
 
     await lead.save();
 
-
+    // Notification
     if (req.user) {
-
-      await Notification.create({
-
+      const notification = await Notification.create({
         userId: req.user.id,
         title: "Lead Deleted",
         message: `${lead.name} was deleted`,
         type: "lead"
-
       });
 
+      if (global.io) {
+        global.io
+          .to(req.user.id.toString())
+          .emit("notification", notification);
+      }
     }
 
-// ✅ REALTIME EMIT
-global.io
-.to(req.user.id.toString())
-.emit("notification", notification);
-
     res.json({
-
       message: "Lead deleted successfully"
-
     });
 
-=======
-    await lead.save(); // Save the soft delete status
-    res.json({ message: "Lead deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
->>>>>>> 95679352bbf232ce8b4597b75f3c0b88dfc32146
-  }
-
-  catch (error) {
-
     res.status(500).json({
-
       message: error.message
-
     });
-
   }
-
 };
 
 
-
-
 module.exports = {
-
   createLead,
   getAllLeads,
   updateLead,
   deleteLead
-
 };
