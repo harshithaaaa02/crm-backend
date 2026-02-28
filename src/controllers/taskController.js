@@ -11,23 +11,32 @@ exports.createTask = async (req, res) => {
   }
 };
 
-// 2. READ all tasks
+// 2. READ all tasks (Optimized for Read-Only Performance)
 exports.getTasks = async (req, res) => {
   try {
-    // .populate() pulls in the actual names instead of just showing random ID numbers!
     const tasks = await Task.find()
       .populate('assignedTo', 'name email')
-      .populate('leadId', 'company');
+      .populate('leadId', 'company')
+      .lean(); // <-- NEW: Strips heavy Mongoose features for a massive speed boost
+      
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
   }
 };
 
-// 3. UPDATE a task (like changing status to "Completed")
+// 3. UPDATE a task (Optimized for Data Integrity)
 exports.updateTask = async (req, res) => {
   try {
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const task = await Task.findByIdAndUpdate(
+      req.params.id, 
+      req.body, 
+      { 
+        new: true, 
+        runValidators: true // <-- NEW: Forces updates to follow your Schema rules!
+      }
+    );
+    
     if (!task) return res.status(404).json({ message: "Task not found" });
     res.status(200).json(task);
   } catch (error) {
@@ -40,7 +49,9 @@ exports.deleteTask = async (req, res) => {
   try {
     const task = await Task.findByIdAndDelete(req.params.id);
     if (!task) return res.status(404).json({ message: "Task not found" });
-    res.status(200).json({ message: "Task deleted successfully" });
+    
+    res.status(200).json({ message: "Task deleted successfully", id: req.params.id }); 
+    // ^ NEW: Sending the ID back helps the React UI instantly remove it without a refresh
   } catch (error) {
     res.status(500).json({ message: "Failed to delete task", error: error.message });
   }
