@@ -7,22 +7,28 @@ exports.createTask = async (req, res) => {
     const task = new Task(req.body);
     await task.save();
 
+    let notification = null;
+
     if (task.assignedTo) {
-      await Notification.create({
+      notification = await Notification.create({
         userId: task.assignedTo,
         title: "New Task Assigned",
         message: task.title,
         type: "task"
       });
+
+      // emit only if socket exists
+      if (global.io) {
+        global.io
+          .to(task.assignedTo.toString())
+          .emit("notification", notification);
+      }
     }
 
-// ✅ REALTIME EMIT
-global.io
-.to(req.user.id.toString())
-.emit("notification", notification);
     res.status(201).json(task);
 
   } catch (error) {
+    console.error("CREATE TASK ERROR:", error); // IMPORTANT
     res.status(400).json({
       message: "Failed to create task",
       error: error.message
