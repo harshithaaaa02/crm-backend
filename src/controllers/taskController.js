@@ -81,3 +81,62 @@ exports.deleteTask = async (req, res) => {
     res.status(500).json({ message: "Failed to delete task", error: error.message });
   }
 };
+
+
+// ✅ ADD NOTE TO TASK
+exports.addNote = async (req, res) => {
+
+  try {
+
+    const task = await Task.findById(req.params.id);
+
+    if (!task)
+      return res.status(404).json({ message: "Task not found" });
+
+    task.notes.push({
+      text: req.body.text
+    });
+
+    await task.save();
+
+    res.status(200).json(task);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+};
+
+// ✅ DELETE NOTE
+exports.deleteNote = async (req, res) => {
+
+  try {
+
+    const { taskId, noteId } = req.params;
+
+    const task = await Task.findById(taskId);
+
+    if (!task)
+      return res.status(404).json({ message: "Task not found" });
+
+    task.notes = task.notes.filter(
+      note => note._id.toString() !== noteId
+    );
+
+    await task.save();
+
+    res.status(200).json(task);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+};

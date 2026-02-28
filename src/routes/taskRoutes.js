@@ -6,7 +6,9 @@ const {
   createTask, 
   getTasks, 
   updateTask, 
-  deleteTask 
+  deleteTask,
+  addNote,
+  deleteNote
 } = require('../controllers/taskController');
 
 // Chain routes for the root path ('/')
@@ -18,5 +20,8 @@ router.route('/')
 router.route('/:id')
   .put(updateTask)
   .delete(deleteTask);
+
+router.post("/:id/note", addNote);
+router.delete("/:taskId/note/:noteId", deleteNote);
 
 module.exports = router;
