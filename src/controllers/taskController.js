@@ -1,13 +1,32 @@
 const Task = require('../models/Task');
-
+const Notification = require('../models/Notification'); // ✅ ADD
 // 1. CREATE a new task
 exports.createTask = async (req, res) => {
   try {
+
     const task = new Task(req.body);
     await task.save();
+
+    if (task.assignedTo) {
+      await Notification.create({
+        userId: task.assignedTo,
+        title: "New Task Assigned",
+        message: task.title,
+        type: "task"
+      });
+    }
+
+// ✅ REALTIME EMIT
+global.io
+.to(req.user.id.toString())
+.emit("notification", notification);
     res.status(201).json(task);
+
   } catch (error) {
-    res.status(400).json({ message: "Failed to create task", error: error.message });
+    res.status(400).json({
+      message: "Failed to create task",
+      error: error.message
+    });
   }
 };
 

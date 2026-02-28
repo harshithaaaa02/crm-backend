@@ -1,10 +1,9 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Notification = require("../models/Notification");
 
 // REGISTER
-// REGISTER BLOCK in src/controllers/authController.js
-// REGISTER BLOCK in src/controllers/authController.js
 const register = async (req, res) => {
   try {
     // 1. Destructure 'role' from the request body
@@ -27,14 +26,17 @@ const register = async (req, res) => {
 // LOGIN
 const login = async (req, res) => {
   try {
+
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
+
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -44,6 +46,14 @@ const login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
+
+    // ✅ Create notification
+    await Notification.create({
+      userId: user._id,
+      title: "Login Successful",
+      message: "You logged into CRM",
+      type: "system"
+    });
 
     res.json({
       token,
@@ -55,12 +65,12 @@ const login = async (req, res) => {
       }
     });
 
-  } 
-  catch (error) {
-  console.error("REGISTER ERROR:", error);
-  res.status(400).json({ message: error.message });
-}
+  } catch (error) {
 
+    console.error("LOGIN ERROR:", error);
+    res.status(500).json({ message: error.message });
+
+  }
 };
 
 module.exports = { register, login };
