@@ -39,7 +39,7 @@ app.use("/api/leads", require("./src/routes/leadRoutes"));
 app.use("/api/clients", require("./src/routes/clientRoutes"));
 app.use("/api/audit-logs", require("./src/routes/auditRoutes"));
 app.use("/api/auth", require("./src/routes/authRoutes"));
-
+app.use("/api/workflows", require("./src/routes/workflowRoutes"));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 require("./src/utils/cronJobs");
 
