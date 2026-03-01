@@ -5,7 +5,7 @@ const AuditLog = require("../models/AuditLog");
 const calculateLeadScore = require("../utils/leadScoring");
 
 
-// 🔹 Get All Leads
+// ✅ GET ALL LEADS
 const getAllLeads = async (req, res) => {
   try {
     const leads = await Lead.find({ isDeleted: false });
@@ -16,131 +16,155 @@ const getAllLeads = async (req, res) => {
 };
 
 
-// 🔹 Create Lead
+// ✅ CREATE LEAD
 const createLead = async (req, res) => {
   try {
-    const { name, email, phone, status, assignedTo } = req.body;
+    const { name, email, phone, status, assignedTo, value } = req.body;
 
     const lead = await Lead.create({
       name,
       email,
       phone,
-      status,
-      assignedTo
+      status: status || "New",
+      assignedTo,
+      value: value || 0,
+      leadScore: calculateLeadScore(value || 0),
+      history: [
+        {
+          type: status || "New",
+          date: new Date(),
+          desc: "Lead created in system."
+        }
+      ]
     });
 
+    // Notification
+    if (req.user) {
+      const notification = await Notification.create({
+        userId: req.user.id,
+        title: "Lead Created",
+        message: `${lead.name} was created`,
+        type: "lead"
+      });
+
+      if (global.io) {
+        global.io
+          .to(req.user.id.toString())
+          .emit("notification", notification);
+      }
+    }
+
     res.status(201).json(lead);
+
   } catch (error) {
-    res.status(500).json({ message: "Lead creation failed", error: error.message });
+    res.status(500).json({
+      message: "Lead creation failed",
+      error: error.message
+    });
   }
 };
 
 
-// 🔹 Update Lead (AI + Workflow + Audit)
+// ✅ UPDATE LEAD
 const updateLead = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, assignedTo, value } = req.body;
+    const { status, assignedTo, value, name, email } = req.body;
 
     const lead = await Lead.findById(id);
-    if (!lead) return res.status(404).json({ message: "Lead not found" });
 
-    const oldStatus = lead.status;
+    if (!lead)
+      return res.status(404).json({ message: "Lead not found" });
 
-    if (status !== undefined) lead.status = status;
+    // Status history logic
+    if (status && status !== lead.status) {
+      lead.history.push({
+        type: status,
+        date: new Date(),
+        desc: `Lead moved to ${status}`
+      });
+      lead.status = status;
+    }
+
+    // Update fields if they are provided in the request
     if (assignedTo !== undefined) lead.assignedTo = assignedTo;
-    if (value !== undefined) lead.value = value;
-
-    // 🔥 AI Lead Scoring Logic
-lead.leadScore = calculateLeadScore(lead.value);
-
-
-    // 🔥 Smart Follow-up Timing
-    let followUpDays;
-    if (lead.leadScore >= 80) followUpDays = 2;
-    else if (lead.leadScore >= 60) followUpDays = 5;
-    else followUpDays = 10;
-
-    lead.nextFollowUpDate = new Date(Date.now() + followUpDays * 24 * 60 * 60 * 1000);
-
-    const sendEmail = require("../utils/emailService");
-
-if (lead.status === "Qualified") {
-  await sendEmail(
-    lead.email,
-    "Lead Qualified",
-    `Hello ${lead.name}, our team will contact you soon.`
-  );
-}
-
-
-    // 🔥 Automatic Task Creation
-    if (oldStatus !== "Qualified" && lead.status === "Qualified") {
-      const existingTask = await Task.findOne({
-        leadId: lead._id,
-        title: "Follow up with Qualified Lead"
-      });
-
-      if (!existingTask) {
-        await Task.create({
-          title: "Follow up with Qualified Lead",
-          description: `Contact ${lead.name} and move to next sales stage.`,
-          leadId: lead._id,
-          assignedTo: lead.assignedTo,
-          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
-        });
-      }
+    
+    if (value !== undefined) {
+      lead.value = value;
+      lead.leadScore = calculateLeadScore(value);
     }
 
-    // 🔥 Notification
-    if (oldStatus !== status && (assignedTo || lead.assignedTo)) {
-      await Notification.create({
-        userId: assignedTo || lead.assignedTo,
-        title: "Lead Status Updated",
-        message: `Lead status changed from ${oldStatus} to ${status}`,
-        type: "lead"
-      });
-    }
+    if (name !== undefined) lead.name = name;
+    
+    if (email !== undefined) lead.email = email; 
 
-    // 🔥 SAVE Lead
     await lead.save();
 
-    // 🔥 Audit Logging
-    await AuditLog.create({
-      action: "UPDATE",
-      entity: "Lead",
-      entityId: lead._id,
-      performedBy: lead.assignedTo || null
-    });
+    // Notification
+    if (req.user) {
+      const notification = await Notification.create({
+        userId: req.user.id,
+        title: "Lead Updated",
+        message: `${lead.name} was updated to ${lead.status}`,
+        type: "lead"
+      });
+
+      if (global.io) {
+        global.io
+          .to(req.user.id.toString())
+          .emit("notification", notification);
+      }
+    }
 
     res.json(lead);
 
   } catch (error) {
-    console.error("UPDATE LEAD ERROR:", error);
-    res.status(500).json({ message: "Update failed", error: error.message });
+    res.status(500).json({
+      message: "Update failed",
+      error: error.message
+    });
   }
 };
 
 
-// 🔹 Soft Delete Lead
+// ✅ DELETE LEAD (Soft delete)
 const deleteLead = async (req, res) => {
   try {
     const lead = await Lead.findById(req.params.id);
 
-    if (!lead) {
+    if (!lead)
       return res.status(404).json({ message: "Lead not found" });
-    }
 
     lead.isDeleted = true;
+
     await lead.save();
 
-    res.json({ message: "Lead soft deleted successfully" });
+    // Notification
+    if (req.user) {
+      const notification = await Notification.create({
+        userId: req.user.id,
+        title: "Lead Deleted",
+        message: `${lead.name} was deleted`,
+        type: "lead"
+      });
+
+      if (global.io) {
+        global.io
+          .to(req.user.id.toString())
+          .emit("notification", notification);
+      }
+    }
+
+    res.json({
+      message: "Lead deleted successfully"
+    });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message
+    });
   }
 };
-
 
 
 module.exports = {

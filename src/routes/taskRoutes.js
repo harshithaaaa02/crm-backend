@@ -1,17 +1,27 @@
 const express = require('express');
 const router = express.Router();
-const taskController = require('../controllers/taskController');
 
-// 1. POST request to create a new task
-router.post('/', taskController.createTask);
+// Destructure the specific methods from your controller
+const { 
+  createTask, 
+  getTasks, 
+  updateTask, 
+  deleteTask,
+  addNote,
+  deleteNote
+} = require('../controllers/taskController');
 
-// 2. GET request to fetch all tasks
-router.get('/', taskController.getTasks);
+// Chain routes for the root path ('/')
+router.route('/')
+  .post(createTask)
+  .get(getTasks);
 
-// 3. PUT request to update a specific task by its ID
-router.put('/:id', taskController.updateTask);
+// Chain routes for the dynamic ID path ('/:id')
+router.route('/:id')
+  .put(updateTask)
+  .delete(deleteTask);
 
-// 4. DELETE request to remove a specific task by its ID
-router.delete('/:id', taskController.deleteTask);
+router.post("/:id/note", addNote);
+router.delete("/:taskId/note/:noteId", deleteNote);
 
 module.exports = router;
