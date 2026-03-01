@@ -3,12 +3,12 @@ const Lead = require("../models/Lead");
 const Notification = require("../models/Notification");
 
 cron.schedule("* * * * *", async () => {
-  console.log("🔄 Running Lead Reminder Job...");
+  
 
   try {
     // Calculate 3 days ago
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
-    console.log("threeDaysAgo:", threeDaysAgo);
+   
 
     // Find only leads that:
     // - Status is New
@@ -22,8 +22,7 @@ cron.schedule("* * * * *", async () => {
       reminderSent: false
     });
 
-    console.log("Found old leads:", oldLeads.length);
-
+    
     for (const lead of oldLeads) {
 
       if (lead.assignedTo) {
