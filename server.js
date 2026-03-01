@@ -54,6 +54,8 @@ app.use("/api/clients", require("./src/routes/clientRoutes"));
 app.use("/api/dashboard", require("./src/routes/dashboardRoutes"));
 app.use("/api/notifications", require("./src/routes/notificationRoutes"));
 app.use("/api/audit-logs", require("./src/routes/auditRoutes"));
+app.use("/api/auth", require("./src/routes/authRoutes"));
+app.use("/api/workflows", require("./src/routes/workflowRoutes"));
 app.use("/api/tasks", require("./src/routes/taskRoutes"));
 
 // ✅ Swagger
