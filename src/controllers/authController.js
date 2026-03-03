@@ -7,15 +7,15 @@ const Notification = require("../models/Notification");
 const register = async (req, res) => {
   try {
     // 1. Destructure 'role' from the request body
-    const { name, email, password, role } = req.body; 
+    const { name, email, password} = req.body; 
 
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // 2. Pass 'role' to the User.create method
-    const user = await User.create({ name, email, password, role }); 
+   // 2. Force role to 'sales' (employee)
+    const user = await User.create({ name, email, password, role: 'sales' }); 
 
     res.status(201).json({ message: "User registered successfully" });
 
