@@ -3,32 +3,32 @@ const Notification = require('../models/Notification'); // ✅ ADD THIS
 // 1. Create Client
 exports.createClient = async (req, res) => {
   try {
-    const { name, email, revenue, lead } = req.body;
+    const { name, email, revenue, lead, ceoName, associatedFrom } = req.body;
 
-    const client = await Client.create({
-      name,
-      email,
-      revenue,
-      lead
-    });
-
+const client = await Client.create({
+  name,
+  email,
+  revenue,
+  lead,
+  ceoName,
+  associatedFrom
+});
     // create notification
-    if (req.user) {
-      await Notification.create({
-        userId: req.user.id,
-        title: "New Client Added",
-        message: `${client.name} added as client`,
-        type: "client"
-      });
-    }
+if (req.user) {
+  const notification = await Notification.create({
+    userId: req.user.id,
+    title: "New Client Added",
+    message: `${client.name} added as client`,
+    type: "client"
+  });
 
-// ✅ REALTIME EMIT
-global.io
-.to(req.user.id.toString())
-.emit("notification", notification);
-    res.status(201).json(client);
-
-  } catch (error) {
+  if (global.io) {
+    global.io
+      .to(req.user.id.toString())
+      .emit("notification", notification);
+  }
+}
+} catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
@@ -146,6 +146,21 @@ exports.getEngagementAnalysis = async (req, res) => {
       cold: cold.length,
       atRisk: atRisk.length
     });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getClientById = async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id)
+      .populate("projects");
+
+    if (!client)
+      return res.status(404).json({ message: "Client not found" });
+
+    res.json(client);
 
   } catch (error) {
     res.status(500).json({ message: error.message });

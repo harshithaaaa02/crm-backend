@@ -57,6 +57,7 @@ app.use("/api/audit-logs", require("./src/routes/auditRoutes"));
 app.use("/api/auth", require("./src/routes/authRoutes"));
 app.use("/api/workflows", require("./src/routes/workflowRoutes"));
 app.use("/api/tasks", require("./src/routes/taskRoutes"));
+app.use("/api/projects", require("./src/routes/projectRoutes"));
 
 // ✅ Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

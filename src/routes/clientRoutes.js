@@ -4,6 +4,7 @@ const { createClient, getClients, updateClient, deleteClient } = require('../con
 const clientController = require("../controllers/clientController");
 router.post('/', createClient);
 router.get('/', getClients);
+router.get("/:id", clientController.getClientById);
 router.put('/:id', updateClient);
 router.delete('/:id', deleteClient);
 router.put("/relationship-score", clientController.calculateRelationshipScore);
