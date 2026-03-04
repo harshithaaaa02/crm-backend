@@ -4,7 +4,8 @@ const installmentSchema = new mongoose.Schema({
   phase: String,
   percentage: Number,
   amount: Number,
-  paid: { type: Boolean, default: false }
+  paid: { type: Boolean, default: false },
+paidAt: Date
 });
 
 const projectSchema = new mongoose.Schema(

@@ -127,17 +127,29 @@ exports.getProjectRevenue = async (req, res) => {
 };
 
 exports.markInstallmentPaid = async (req, res) => {
-  const { projectId, installmentIndex } = req.body;
+  try {
 
-  const project = await Project.findById(projectId);
+    const { projectId, installmentIndex } = req.params;
 
-  project.installments[installmentIndex].paid = true;
+    const project = await Project.findById(projectId);
 
-  await project.save();
+    if (!project)
+      return res.status(404).json({ message: "Project not found" });
 
-  res.json(project);
+    if (!project.installments[installmentIndex])
+      return res.status(400).json({ message: "Invalid installment index" });
+
+    project.installments[installmentIndex].paid = true;
+    project.installments[installmentIndex].paidAt = new Date();
+
+    await project.save();
+
+    res.json(project);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
-
 exports.updateProject = async (req, res) => {
   try {
     const { name, handledBy, totalPayment, deadline } = req.body;
