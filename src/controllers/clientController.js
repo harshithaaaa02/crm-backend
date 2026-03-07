@@ -4,13 +4,15 @@ const Notification = require("../models/Notification");
 // 1. Create Client
 exports.createClient = async (req, res) => {
   try {
-    const { name, email, revenue, lead } = req.body;
+    const { name, email, revenue, lead, ceoName, associatedFrom } = req.body;
 
     const client = await Client.create({
       name,
       email,
       revenue,
       lead,
+      ceoName,
+      associatedFrom,
     });
 
     if (req.user) {
@@ -153,6 +155,20 @@ exports.getEngagementAnalysis = async (req, res) => {
       cold: cold.length,
       atRisk: atRisk.length,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getClientById = async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id).populate("projects");
+
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    res.json(client);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

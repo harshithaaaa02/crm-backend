@@ -3,7 +3,7 @@ const Notification = require("../models/Notification");
 const Task = require("../models/Task");
 const AuditLog = require("../models/AuditLog");
 const calculateLeadScore = require("../utils/leadScoring");
-
+const Client = require("../models/Client");
 
 // ✅ GET ALL LEADS
 const getAllLeads = async (req, res) => {
@@ -65,7 +65,7 @@ const createLead = async (req, res) => {
 };
 
 
-// ✅ UPDATE LEAD
+// UPDATE LEAD
 const updateLead = async (req, res) => {
   try {
     const { id } = req.params;
@@ -77,14 +77,19 @@ const updateLead = async (req, res) => {
       return res.status(404).json({ message: "Lead not found" });
 
     // Status history logic
-    if (status && status !== lead.status) {
-      lead.history.push({
-        type: status,
-        date: new Date(),
-        desc: `Lead moved to ${status}`
-      });
-      lead.status = status;
-    }
+    //  AUTO CREATE CLIENT WHEN CONFIRMED
+if (status === "Confirmed") {
+  const existingClient = await Client.findOne({ email: lead.email });
+
+  if (!existingClient) {
+    await Client.create({
+      name: lead.name,
+      email: lead.email,
+      revenue: lead.value || 0,
+      lead: lead._id
+    });
+  }
+}
 
     // Update fields if they are provided in the request
     if (assignedTo !== undefined) lead.assignedTo = assignedTo;
