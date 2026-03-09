@@ -1,34 +1,37 @@
-const Client = require('../models/Client');
-const Notification = require('../models/Notification'); // ✅ ADD THIS
+const Client = require("../models/Client");
+const Notification = require("../models/Notification");
+
 // 1. Create Client
 exports.createClient = async (req, res) => {
   try {
     const { name, email, revenue, lead, ceoName, associatedFrom } = req.body;
 
-const client = await Client.create({
-  name,
-  email,
-  revenue,
-  lead,
-  ceoName,
-  associatedFrom
-});
-    // create notification
-if (req.user) {
-  const notification = await Notification.create({
-    userId: req.user.id,
-    title: "New Client Added",
-    message: `${client.name} added as client`,
-    type: "client"
-  });
+    const client = await Client.create({
+      name,
+      email,
+      revenue,
+      lead,
+      ceoName,
+      associatedFrom,
+    });
 
-  if (global.io) {
-    global.io
-      .to(req.user.id.toString())
-      .emit("notification", notification);
-  }
-}
-} catch (error) {
+    if (req.user) {
+      const notification = await Notification.create({
+        userId: req.user.id,
+        title: "New Client Added",
+        message: `${client.name} added as client`,
+        type: "client",
+      });
+
+      if (global.io) {
+        global.io
+          .to(req.user.id.toString())
+          .emit("notification", notification);
+      }
+    }
+
+    res.status(201).json(client);
+  } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
@@ -36,10 +39,10 @@ if (req.user) {
 // 2. Get All Clients
 exports.getClients = async (req, res) => {
   try {
-    // We use .populate('lead') to show the Lead details automatically
     const clients = await Client.find({ isDeleted: false })
-                                .populate('lead')
-                                .sort({ createdAt: -1 });
+      .populate("lead")
+      .sort({ createdAt: -1 });
+
     res.status(200).json(clients);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -51,9 +54,13 @@ exports.updateClient = async (req, res) => {
   try {
     const client = await Client.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-      runValidators: true
+      runValidators: true,
     });
-    if (!client) return res.status(404).json({ message: 'Client not found' });
+
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
     res.json(client);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -63,14 +70,21 @@ exports.updateClient = async (req, res) => {
 // 4. Delete Client (Soft Delete)
 exports.deleteClient = async (req, res) => {
   try {
-    const client = await Client.findByIdAndUpdate(req.params.id, { isDeleted: true }, { new: true });
-    if (!client) return res.status(404).json({ message: 'Client not found' });
-    res.json({ message: 'Client removed successfully' });
+    const client = await Client.findByIdAndUpdate(
+      req.params.id,
+      { isDeleted: true },
+      { new: true }
+    );
+
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    res.json({ message: "Client removed successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 exports.calculateRelationshipScore = async (req, res) => {
   try {
@@ -79,7 +93,6 @@ exports.calculateRelationshipScore = async (req, res) => {
     for (const client of clients) {
       let score = 50;
 
-      // Revenue factor
       if (client.revenue > 20000) {
         score += 30;
       } else if (client.revenue > 10000) {
@@ -88,7 +101,6 @@ exports.calculateRelationshipScore = async (req, res) => {
         score += 10;
       }
 
-      // Recent activity factor
       const daysSinceUpdate =
         (Date.now() - new Date(client.updatedAt)) / (1000 * 60 * 60 * 24);
 
@@ -102,11 +114,9 @@ exports.calculateRelationshipScore = async (req, res) => {
 
       client.relationshipScore = score;
       await client.save();
-
     }
 
     res.json({ message: "Relationship scores updated successfully" });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -122,7 +132,6 @@ exports.getEngagementAnalysis = async (req, res) => {
     const atRisk = [];
 
     for (const client of clients) {
-
       if (client.relationshipScore >= 80) {
         hot.push(client);
       } else if (client.relationshipScore >= 60) {
@@ -144,9 +153,8 @@ exports.getEngagementAnalysis = async (req, res) => {
       hot: hot.length,
       warm: warm.length,
       cold: cold.length,
-      atRisk: atRisk.length
+      atRisk: atRisk.length,
     });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -154,14 +162,13 @@ exports.getEngagementAnalysis = async (req, res) => {
 
 exports.getClientById = async (req, res) => {
   try {
-    const client = await Client.findById(req.params.id)
-      .populate("projects");
+    const client = await Client.findById(req.params.id).populate("projects");
 
-    if (!client)
+    if (!client) {
       return res.status(404).json({ message: "Client not found" });
+    }
 
     res.json(client);
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
