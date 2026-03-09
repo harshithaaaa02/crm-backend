@@ -7,7 +7,7 @@ const rateLimit = require("express-rate-limit");
 const errorHandler = require("./src/middlewares/errorMiddleware");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./src/config/swagger");
-
+const serviceRoutes = require("./src/routes/serviceRoutes");
 const http = require("http");
 const { Server } = require("socket.io");
 
@@ -58,7 +58,7 @@ app.use("/api/auth", require("./src/routes/authRoutes"));
 app.use("/api/workflows", require("./src/routes/workflowRoutes"));
 app.use("/api/tasks", require("./src/routes/taskRoutes"));
 app.use("/api/projects", require("./src/routes/projectRoutes"));
-
+app.use("/api/services", require("./src/routes/serviceRoutes"));
 // ✅ Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
