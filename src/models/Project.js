@@ -21,9 +21,20 @@ const projectSchema = new mongoose.Schema(
     client: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Client"
+    },
+      installments: [
+    {
+      phase: String,
+      percentage: Number,
+      amount: Number,
+      paid: {
+        type: Boolean,
+        default: false
+      }
     }
+  ]
   },
   { timestamps: true }
 );
-
+  { timestamps: true }
 module.exports = mongoose.model("Project", projectSchema);

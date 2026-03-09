@@ -17,7 +17,7 @@ console.log("SERVER RUNNING FROM:", __filename);
 console.log("ENV CHECK:", process.env.MONGO_URI);
 
 
-// ✅ CREATE EXPRESS APP FIRST
+//  CREATE EXPRESS APP FIRST
 const app = express();
 
 
@@ -26,7 +26,7 @@ app.use(helmet());
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 1000
 });
 
 app.use(limiter);

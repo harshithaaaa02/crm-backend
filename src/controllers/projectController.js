@@ -41,7 +41,9 @@ if (totalPercent !== 100) {
     message: "Installment percentages must equal 100%"
   });
 }
-
+const p1 = (Number(phase1Percent) / 100) * Number(totalPayment);
+const p2 = (Number(phase2Percent) / 100) * Number(totalPayment);
+const p3 = (Number(phase3Percent) / 100) * Number(totalPayment);
     const project = await Project.create({
       name,
       handledBy,
@@ -179,10 +181,24 @@ exports.undoInstallmentPayment = async (req, res) => {
 
     const project = await Project.findById(projectId);
 
-    if (!project)
-      return res.status(404).json({ message: "Project not found" });
-
     project.installments[installmentIndex].paid = false;
+
+    await project.save();
+
+    res.json(project);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.toggleInstallment = async (req, res) => {
+  try {
+    const { projectId, index } = req.params;
+
+    const project = await Project.findById(projectId);
+
+    project.installments[index].paid =
+      !project.installments[index].paid;
 
     await project.save();
 
