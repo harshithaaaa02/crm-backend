@@ -4,13 +4,19 @@ const leadSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
 
-    company: { type: String },
+    company: { type: String, default: "" },
 
     email: { type: String, required: true, unique: true },
 
-    username: { type: String },
+    username: { type: String, default: "" },
 
-    password: { type: String },
+    password: { type: String, default: "" },
+
+    projectName: { type: String, default: "" },
+
+    phone: { type: String, default: "" },
+
+    value: { type: Number, default: 0 },
 
     totalAmount: { type: Number, default: 0 },
 
@@ -20,7 +26,20 @@ const leadSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["New", "Contacted", "Negotiation", "Confirmed", "Lost"],
+      enum: [
+        "New",
+        "Contacted",
+        "Negotiation",
+        "Confirmed",
+        "Lost",
+        "Started",
+        "Project Started",
+        "In Progress",
+        "Progress",
+        "Deploying",
+        "Deployment",
+        "Live",
+      ],
       default: "New",
     },
 
@@ -33,6 +52,8 @@ const leadSchema = new mongoose.Schema(
     ],
 
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+    leadScore: { type: Number, default: 0 },
 
     isDeleted: { type: Boolean, default: false },
   },
