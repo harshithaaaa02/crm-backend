@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 const taskSchema = new mongoose.Schema(
 {
   title: {
@@ -18,14 +19,19 @@ const taskSchema = new mongoose.Schema(
     ref: "User"
   },
 
-  dueDate: Date,
+  dueDate: {
+    type: Date
+  },
+
+  dueTime: {
+    type: String
+  },
 
   status: {
     type: String,
     default: "Pending"
   },
 
-  // ✅ ADD THIS
   notes: [
     {
       text: String,
