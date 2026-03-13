@@ -15,15 +15,25 @@ const getAllLeads = async (req, res) => {
   }
 };
 
-
 // ✅ CREATE LEAD
 const createLead = async (req, res) => {
   try {
-    const { name, email, phone, status, assignedTo, value } = req.body;
+    const {
+      name,
+      email,
+      company,
+      projectName,
+      phone,
+      status,
+      assignedTo,
+      value,
+    } = req.body;
 
     const lead = await Lead.create({
       name,
       email,
+      company: company || "",
+      projectName: projectName || "",
       phone,
       status: status || "New",
       assignedTo,
@@ -33,148 +43,144 @@ const createLead = async (req, res) => {
         {
           type: status || "New",
           date: new Date(),
-          desc: "Lead created in system."
-        }
-      ]
+          desc: "Lead created in system.",
+        },
+      ],
     });
 
-    // Notification
     if (req.user) {
       const notification = await Notification.create({
         userId: req.user.id,
         title: "Lead Created",
         message: `${lead.name} was created`,
-        type: "lead"
+        type: "lead",
       });
 
       if (global.io) {
-        global.io
-          .to(req.user.id.toString())
-          .emit("notification", notification);
+        global.io.to(req.user.id.toString()).emit("notification", notification);
       }
     }
 
     res.status(201).json(lead);
-
   } catch (error) {
     res.status(500).json({
       message: "Lead creation failed",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-
-// UPDATE LEAD
+// ✅ UPDATE LEAD
 const updateLead = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, assignedTo, value, name, email } = req.body;
+    const { status, assignedTo, value, name, email, company, projectName } =
+      req.body;
 
     const lead = await Lead.findById(id);
 
-    if (!lead)
+    if (!lead) {
       return res.status(404).json({ message: "Lead not found" });
+    }
 
-    // Status history logic
-    //  AUTO CREATE CLIENT WHEN CONFIRMED
-if (status === "Confirmed") {
-  const existingClient = await Client.findOne({ email: lead.email });
+    // ✅ status history + actual status update
+    if (status && status !== lead.status) {
+      lead.history.push({
+        type: status,
+        date: new Date(),
+        desc: `Lead moved to ${status}`,
+      });
+      lead.status = status;
+    }
 
-  if (!existingClient) {
-    await Client.create({
-      name: lead.name,
-      email: lead.email,
-      revenue: lead.value || 0,
-      lead: lead._id
-    });
-  }
-}
+    // ✅ auto create client when confirmed
+    if (status === "Confirmed") {
+      const existingClient = await Client.findOne({ email: lead.email });
 
-    // Update fields if they are provided in the request
+      if (!existingClient) {
+        await Client.create({
+          name: company || lead.company || lead.name,
+          email: email || lead.email,
+          revenue: value !== undefined ? value : lead.value || 0,
+          lead: lead._id,
+        });
+      }
+    }
+
     if (assignedTo !== undefined) lead.assignedTo = assignedTo;
-    
+
     if (value !== undefined) {
       lead.value = value;
       lead.leadScore = calculateLeadScore(value);
     }
 
     if (name !== undefined) lead.name = name;
-    
-    if (email !== undefined) lead.email = email; 
+    if (email !== undefined) lead.email = email;
+    if (company !== undefined) lead.company = company;
+    if (projectName !== undefined) lead.projectName = projectName;
 
     await lead.save();
 
-    // Notification
     if (req.user) {
       const notification = await Notification.create({
         userId: req.user.id,
         title: "Lead Updated",
         message: `${lead.name} was updated to ${lead.status}`,
-        type: "lead"
+        type: "lead",
       });
 
       if (global.io) {
-        global.io
-          .to(req.user.id.toString())
-          .emit("notification", notification);
+        global.io.to(req.user.id.toString()).emit("notification", notification);
       }
     }
 
     res.json(lead);
-
   } catch (error) {
     res.status(500).json({
       message: "Update failed",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-
-// ✅ DELETE LEAD (Soft delete)
+// ✅ DELETE LEAD
 const deleteLead = async (req, res) => {
   try {
     const lead = await Lead.findById(req.params.id);
 
-    if (!lead)
+    if (!lead) {
       return res.status(404).json({ message: "Lead not found" });
+    }
 
     lead.isDeleted = true;
-
     await lead.save();
 
-    // Notification
     if (req.user) {
       const notification = await Notification.create({
         userId: req.user.id,
         title: "Lead Deleted",
         message: `${lead.name} was deleted`,
-        type: "lead"
+        type: "lead",
       });
 
       if (global.io) {
-        global.io
-          .to(req.user.id.toString())
-          .emit("notification", notification);
+        global.io.to(req.user.id.toString()).emit("notification", notification);
       }
     }
 
     res.json({
-      message: "Lead deleted successfully"
+      message: "Lead deleted successfully",
     });
-
   } catch (error) {
     res.status(500).json({
-      message: error.message
+      message: error.message,
     });
   }
 };
-
 
 module.exports = {
   createLead,
   getAllLeads,
   updateLead,
-  deleteLead
+  deleteLead,
 };
