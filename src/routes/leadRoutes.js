@@ -9,17 +9,21 @@ const {
   createLead,
   getAllLeads,
   updateLead,
-  deleteLead
+  deleteLead,
 } = require('../controllers/leadController');
-
 
 // CREATE LEAD
 router.post(
   '/',
-  protect,   // ⭐ REQUIRED
+  protect,
   [
-    body("name").notEmpty().withMessage("Name required"),
-    body("email").isEmail().withMessage("Valid email required")
+    body("company").notEmpty().withMessage("Company required"),
+    body("email").isEmail().withMessage("Valid email required"),
+    body("username").notEmpty().withMessage("Username required"),
+    body("password").notEmpty().withMessage("Password required"),
+    body("totalAmount").isNumeric().withMessage("Total amount required"),
+    body("amountPaid").isNumeric().withMessage("Amount paid required"),
+    body("remaining").isNumeric().withMessage("Remaining required"),
   ],
   createLead
 );
@@ -27,13 +31,10 @@ router.post(
 // GET LEADS
 router.get('/', protect, getAllLeads);
 
-
 // UPDATE
 router.put('/:id', protect, updateLead);
 
-
 // DELETE (ADMIN ONLY)
 router.delete('/:id', protect, authorize("admin"), deleteLead);
-
 
 module.exports = router;

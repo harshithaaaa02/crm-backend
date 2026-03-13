@@ -1,9 +1,7 @@
 const Lead = require("../models/Lead");
 const Notification = require("../models/Notification");
-const Task = require("../models/Task");
-const AuditLog = require("../models/AuditLog");
-const calculateLeadScore = require("../utils/leadScoring");
 const Client = require("../models/Client");
+const calculateLeadScore = require("../utils/leadScoring");
 
 // ✅ GET ALL LEADS
 const getAllLeads = async (req, res) => {
@@ -20,28 +18,51 @@ const createLead = async (req, res) => {
   try {
     const {
       name,
-      email,
       company,
+      email,
+      username,
+      password,
       projectName,
       phone,
       status,
       assignedTo,
       value,
+      totalAmount,
+      amountPaid,
+      remaining,
     } = req.body;
 
+    const finalStatus = status || "New";
+    const finalValue =
+      value !== undefined
+        ? Number(value) || 0
+        : totalAmount !== undefined
+        ? Number(totalAmount) || 0
+        : 0;
+
     const lead = await Lead.create({
-      name,
-      email,
+      name: name || company,
       company: company || "",
+      email,
+      username,
+      password,
       projectName: projectName || "",
       phone,
-      status: status || "New",
+      status: finalStatus,
       assignedTo,
-      value: value || 0,
-      leadScore: calculateLeadScore(value || 0),
+      value: finalValue,
+      totalAmount: totalAmount !== undefined ? Number(totalAmount) || 0 : finalValue,
+      amountPaid: amountPaid !== undefined ? Number(amountPaid) || 0 : 0,
+      remaining:
+        remaining !== undefined
+          ? Number(remaining) || 0
+          : totalAmount !== undefined
+          ? (Number(totalAmount) || 0) - (Number(amountPaid) || 0)
+          : 0,
+      leadScore: calculateLeadScore(finalValue),
       history: [
         {
-          type: status || "New",
+          type: finalStatus,
           date: new Date(),
           desc: "Lead created in system.",
         },
@@ -74,8 +95,21 @@ const createLead = async (req, res) => {
 const updateLead = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, assignedTo, value, name, email, company, projectName } =
-      req.body;
+    const {
+      name,
+      company,
+      email,
+      username,
+      password,
+      projectName,
+      phone,
+      totalAmount,
+      amountPaid,
+      remaining,
+      status,
+      assignedTo,
+      value,
+    } = req.body;
 
     const lead = await Lead.findById(id);
 
@@ -93,31 +127,57 @@ const updateLead = async (req, res) => {
       lead.status = status;
     }
 
-    // ✅ auto create client when confirmed
+    // ✅ auto create client when Confirmed
     if (status === "Confirmed") {
-      const existingClient = await Client.findOne({ email: lead.email });
+      const existingClient = await Client.findOne({ email: email || lead.email });
 
       if (!existingClient) {
         await Client.create({
-          name: company || lead.company || lead.name,
+          name: company || lead.company || name || lead.name,
           email: email || lead.email,
-          revenue: value !== undefined ? value : lead.value || 0,
+          revenue:
+            totalAmount !== undefined
+              ? Number(totalAmount) || 0
+              : value !== undefined
+              ? Number(value) || 0
+              : lead.totalAmount || lead.value || 0,
           lead: lead._id,
         });
       }
     }
 
+    if (name !== undefined) lead.name = name;
+    if (company !== undefined) lead.company = company;
+    if (email !== undefined) lead.email = email;
+    if (username !== undefined) lead.username = username;
+    if (password !== undefined) lead.password = password;
+    if (projectName !== undefined) lead.projectName = projectName;
+    if (phone !== undefined) lead.phone = phone;
     if (assignedTo !== undefined) lead.assignedTo = assignedTo;
 
     if (value !== undefined) {
-      lead.value = value;
-      lead.leadScore = calculateLeadScore(value);
+      lead.value = Number(value) || 0;
+      lead.leadScore = calculateLeadScore(Number(value) || 0);
     }
 
-    if (name !== undefined) lead.name = name;
-    if (email !== undefined) lead.email = email;
-    if (company !== undefined) lead.company = company;
-    if (projectName !== undefined) lead.projectName = projectName;
+    if (totalAmount !== undefined) lead.totalAmount = Number(totalAmount) || 0;
+    if (amountPaid !== undefined) lead.amountPaid = Number(amountPaid) || 0;
+
+    if (remaining !== undefined) {
+      lead.remaining = Number(remaining) || 0;
+    } else if (totalAmount !== undefined || amountPaid !== undefined) {
+      const finalTotal =
+        totalAmount !== undefined
+          ? Number(totalAmount) || 0
+          : Number(lead.totalAmount) || 0;
+
+      const finalPaid =
+        amountPaid !== undefined
+          ? Number(amountPaid) || 0
+          : Number(lead.amountPaid) || 0;
+
+      lead.remaining = finalTotal - finalPaid;
+    }
 
     await lead.save();
 
@@ -168,13 +228,9 @@ const deleteLead = async (req, res) => {
       }
     }
 
-    res.json({
-      message: "Lead deleted successfully",
-    });
+    res.json({ message: "Lead deleted successfully" });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 

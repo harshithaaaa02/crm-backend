@@ -3,15 +3,27 @@ const mongoose = require("mongoose");
 const leadSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
+
+    company: { type: String, default: "" },
+
     email: { type: String, required: true, unique: true },
 
-    // ✅ added for pipeline company/project view
-    company: { type: String, default: "" },
+    username: { type: String, default: "" },
+
+    password: { type: String, default: "" },
+
     projectName: { type: String, default: "" },
+
+    phone: { type: String, default: "" },
 
     value: { type: Number, default: 0 },
 
-    // keep old statuses so other pages don't break
+    totalAmount: { type: Number, default: 0 },
+
+    amountPaid: { type: Number, default: 0 },
+
+    remaining: { type: Number, default: 0 },
+
     status: {
       type: String,
       enum: [
@@ -40,6 +52,9 @@ const leadSchema = new mongoose.Schema(
     ],
 
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+    leadScore: { type: Number, default: 0 },
+
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }

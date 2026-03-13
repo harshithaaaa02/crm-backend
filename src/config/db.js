@@ -5,7 +5,8 @@ const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log(" MongoDB Connected Successfully");
-    // Force re-seed admin user to ensure correct password/role
+
+    // Force re-seed admin user
     await User.findOneAndDelete({ email: "admin@email.com" });
 
     await User.create({
