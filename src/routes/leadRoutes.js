@@ -5,12 +5,7 @@ const { body } = require("express-validator");
 const { protect } = require("../middlewares/authMiddleware");
 const { authorize } = require("../middlewares/roleMiddleware");
 
-const {
-  createLead,
-  getAllLeads,
-  updateLead,
-  deleteLead,
-} = require('../controllers/leadController');
+const {createLead,getAllLeads,updateLead,deleteLead,} = require('../controllers/leadController');
 
 // CREATE LEAD
 router.post(
