@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Lead = require("../models/Lead");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Notification = require("../models/Notification");
@@ -6,37 +7,32 @@ const Notification = require("../models/Notification");
 // REGISTER
 const register = async (req, res) => {
   try {
-    // 1. Destructure 'role' from the request body
-    const { name, email, password} = req.body; 
+    const { name, email, password } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-   // 2. Force role to 'sales' (employee)
-    const user = await User.create({ name, email, password, role: 'sales' }); 
+    const user = await User.create({ name, email, password, role: "sales" });
 
     res.status(201).json({ message: "User registered successfully" });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-// LOGIN
+
+// LOGIN (Admin/Sales)
 const login = async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -47,12 +43,11 @@ const login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    // ✅ Create notification
     await Notification.create({
       userId: user._id,
       title: "Login Successful",
       message: "You logged into CRM",
-      type: "system"
+      type: "system",
     });
 
     res.json({
@@ -61,16 +56,58 @@ const login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
-
   } catch (error) {
-
     console.error("LOGIN ERROR:", error);
     res.status(500).json({ message: error.message });
-
   }
 };
 
-module.exports = { register, login };
+// CLIENT LOGIN
+const clientLogin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password required" });
+    }
+
+    // Find lead by username
+    const lead = await Lead.findOne({ username, isDeleted: false });
+    if (!lead) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Plain text password comparison (as stored in leads)
+    if (lead.password !== password) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Sign a client-specific JWT
+    const token = jwt.sign(
+      { id: lead._id, role: "client" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      token,
+      client: {
+        id: lead._id,
+        name: lead.company || lead.name,
+        email: lead.email,
+        username: lead.username,
+        totalAmount: lead.totalAmount || 0,
+        amountPaid: lead.amountPaid || 0,
+        remaining: lead.remaining || 0,
+      },
+    });
+  } catch (error) {
+    console.error("CLIENT LOGIN ERROR:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { register, login, clientLogin };

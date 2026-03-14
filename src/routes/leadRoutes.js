@@ -5,9 +5,9 @@ const { body } = require("express-validator");
 const { protect } = require("../middlewares/authMiddleware");
 const { authorize } = require("../middlewares/roleMiddleware");
 
-const {createLead,getAllLeads,updateLead,deleteLead,} = require('../controllers/leadController');
+const { createLead, getAllLeads, updateLead, deleteLead } = require('../controllers/leadController');
 
-// CREATE LEAD
+// CREATE LEAD — amounts removed, auto-calculated from projects
 router.post(
   '/',
   protect,
@@ -16,9 +16,6 @@ router.post(
     body("email").isEmail().withMessage("Valid email required"),
     body("username").notEmpty().withMessage("Username required"),
     body("password").notEmpty().withMessage("Password required"),
-    body("totalAmount").isNumeric().withMessage("Total amount required"),
-    body("amountPaid").isNumeric().withMessage("Amount paid required"),
-    body("remaining").isNumeric().withMessage("Remaining required"),
   ],
   createLead
 );
